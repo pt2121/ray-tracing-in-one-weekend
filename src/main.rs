@@ -1,5 +1,12 @@
 use std::ops::{Add, Sub, Mul, Div};
+use cgmath::Vector3;
 use log::info;
+
+type Color = Vector3<f32>;
+
+fn write_color(color: Vector3<i32>) {
+    println!("{} {} {}", color.x, color.y, color.z);
+}
 
 fn map_range<T: Copy>(from_range: (T, T), to_range: (T, T), s: T) -> T
     where T: Add<T, Output=T> +
@@ -24,8 +31,8 @@ fn main() {
             let r = map_range((0, image_width - 1), (0, 255), i);
             let g = map_range((0, image_height - 1), (0, 255), j);
             let b = 0;
-
-            println!("{r} {g} {b}");
+            let color = Vector3::new(r, g, b);
+            write_color(color);
         }
     }
     info!("Done.")
