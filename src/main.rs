@@ -1,7 +1,7 @@
 mod ray;
 
 use std::ops::{Add, Sub, Mul, Div};
-use cgmath::{Point3, Vector3};
+use cgmath::{InnerSpace, Point3, Vector3};
 use log::info;
 use crate::ray::Ray;
 
@@ -24,13 +24,26 @@ fn map_range<T: Copy>(from_range: (T, T), to_range: (T, T), s: T) -> T
     to_range.0 + (s - from_range.0) * (to_range.1 - to_range.0) / (from_range.1 - from_range.0)
 }
 
-fn ray_color(r: Ray) -> Vector3<i32> {
+fn ray_color(r: &Ray) -> Vector3<i32> {
+    if hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return color(255, 0, 0);
+    }
     let unit_direction = r.unit_dir();
     let a = 0.5 * (unit_direction.y + 1.0);
     let c = ((1.0 - a) * Vector3::new(255.0, 255.0, 255.0) + a * Vector3::new(0.5 * 255.0, 0.7 * 255.0, 255.0));
     return color(c.x as i32, c.y as i32, c.z as i32);
 }
 
+fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> bool {
+    let oc = ray.origin() - center;
+    let a = ray.dir.dot(ray.dir);
+    let b = 2.0 * oc.dot(ray.dir);
+    let c = oc.dot(oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    return discriminant >= 0.0;
+}
+
+// RUST_LOG=info cargo run > image.ppm
 fn main() {
     env_logger::init();
 
@@ -71,7 +84,7 @@ fn main() {
             // let g = map_range((0, image_height - 1), (0, 255), j);
             // let b = 0;
             // let color = color(r, g, b);
-            let color = ray_color(ray);
+            let color = ray_color(&ray);
             write_color(color);
         }
     }

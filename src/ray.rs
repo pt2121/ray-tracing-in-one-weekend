@@ -1,8 +1,8 @@
-use cgmath::{InnerSpace, Point3, Vector3};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
 pub struct Ray {
-    origin: Point3<f32>,
-    dir: Vector3<f32>,
+    pub origin: Point3<f32>,
+    pub dir: Vector3<f32>,
 }
 
 impl Ray {
@@ -17,5 +17,9 @@ impl Ray {
 
     pub fn unit_dir(&self) -> Vector3<f32> {
         self.dir.normalize()
+    }
+
+    pub fn origin(&self) -> Vector3<f32> {
+        self.origin.to_vec()
     }
 }
