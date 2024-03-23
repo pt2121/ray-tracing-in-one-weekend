@@ -1,4 +1,4 @@
-use cgmath::{EuclideanSpace, InnerSpace, Point3};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
@@ -18,6 +18,11 @@ impl Sphere {
             radius,
         }
     }
+}
+
+fn is_front_face(ray: &Ray, outward_normal: Vector3<f32>) -> bool {
+    // the parameter `outward_normal` is assumed to have unit length.
+    return ray.dir.dot(outward_normal) < 0.0;
 }
 
 impl Hittable for Sphere {
@@ -41,10 +46,16 @@ impl Hittable for Sphere {
             }
 
             let point3 = ray.at(root);
+            let outward_normal = (point3 - self.center) / self.radius;
+            let normal = if is_front_face(ray, outward_normal) {
+                outward_normal
+            } else {
+                -outward_normal
+            };
             Some(HitRecord {
                 t: root,
                 p: point3,
-                normal: (point3 - self.center) / self.radius,
+                normal,
             })
         };
     }

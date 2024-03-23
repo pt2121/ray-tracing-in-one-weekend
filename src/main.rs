@@ -3,7 +3,6 @@ mod hittable;
 mod hit_record;
 mod sphere;
 
-use std::ops::{Add, Sub, Mul, Div};
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use log::info;
 use crate::ray::Ray;
@@ -18,18 +17,8 @@ fn write_color(color: Vector3<i32>) {
     println!("{} {} {}", color.x, color.y, color.z);
 }
 
-fn map_range<T: Copy>(from_range: (T, T), to_range: (T, T), s: T) -> T
-    where T: Add<T, Output=T> +
-    Sub<T, Output=T> +
-    Mul<T, Output=T> +
-    Div<T, Output=T>
-{
-    to_range.0 + (s - from_range.0) * (to_range.1 - to_range.0) / (from_range.1 - from_range.0)
-}
-
 fn ray_color(r: &Ray) -> Vector3<i32> {
-    let t = hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
+    if let Some(t) = hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, r) {
         let n = r.at(t).to_vec() - Vector3::new(0.0, 0.0, -1.0);
         let m = 255.0 * 0.5 * (n.normalize() + Vector3::new(1.0, 1.0, 1.0));
         return color(m.x as i32, m.y as i32, m.z as i32);
@@ -40,8 +29,7 @@ fn ray_color(r: &Ray) -> Vector3<i32> {
     return color(c.x as i32, c.y as i32, c.z as i32);
 }
 
-// TODO
-fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
+fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> Option<f32> {
     let oc = ray.origin() - center;
     let a = ray.dir.magnitude2(); // squared length
     let half_b = oc.dot(ray.dir);
@@ -49,9 +37,9 @@ fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
     let discriminant = half_b * half_b - a * c;
 
     return if discriminant < 0.0 {
-        -1.0
+        None
     } else {
-        (-half_b - discriminant.sqrt()) / a
+        Some((-half_b - discriminant.sqrt()) / a)
     };
 }
 
