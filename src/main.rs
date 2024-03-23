@@ -1,4 +1,7 @@
 mod ray;
+mod hittable;
+mod hit_record;
+mod sphere;
 
 use std::ops::{Add, Sub, Mul, Div};
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
@@ -37,6 +40,7 @@ fn ray_color(r: &Ray) -> Vector3<i32> {
     return color(c.x as i32, c.y as i32, c.z as i32);
 }
 
+// TODO
 fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
     let oc = ray.origin() - center;
     let a = ray.dir.magnitude2(); // squared length
@@ -88,10 +92,6 @@ fn main() {
             let ray_direction = pixel_center - camera_center;
             let ray = Ray::new(camera_center, ray_direction);
 
-            // let r = map_range((0, image_width - 1), (0, 255), i);
-            // let g = map_range((0, image_height - 1), (0, 255), j);
-            // let b = 0;
-            // let color = color(r, g, b);
             let color = ray_color(&ray);
             write_color(color);
         }
