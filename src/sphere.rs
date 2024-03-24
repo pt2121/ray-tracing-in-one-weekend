@@ -3,7 +3,7 @@ use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 
-struct Sphere {
+pub struct Sphere {
     center: Point3<f32>,
     radius: f32,
 }
@@ -25,7 +25,7 @@ fn is_front_face(ray: &Ray, outward_normal: Vector3<f32>) -> bool {
     return ray.dir.dot(outward_normal) < 0.0;
 }
 
-pub fn hit(objects: Vec<impl Hittable>, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
+pub fn hit(objects: &Vec<impl Hittable>, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
     let mut closest = ray_tmax;
     let mut hit_anything: Option<HitRecord> = None;
     for h in objects.iter() {

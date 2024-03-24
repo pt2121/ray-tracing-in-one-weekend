@@ -3,9 +3,11 @@ mod hittable;
 mod hit_record;
 mod sphere;
 
-use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
+use cgmath::{Point3, Vector3};
 use log::info;
+use crate::hittable::Hittable;
 use crate::ray::Ray;
+use crate::sphere::{hit, Sphere};
 
 pub type Color = Vector3<f32>;
 
@@ -17,30 +19,15 @@ fn write_color(color: Vector3<i32>) {
     println!("{} {} {}", color.x, color.y, color.z);
 }
 
-fn ray_color(r: &Ray) -> Vector3<i32> {
-    if let Some(t) = hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, r) {
-        let n = r.at(t).to_vec() - Vector3::new(0.0, 0.0, -1.0);
-        let m = 255.0 * 0.5 * (n.normalize() + Vector3::new(1.0, 1.0, 1.0));
+fn ray_color(ray: &Ray, world: &Vec<impl Hittable>) -> Vector3<i32> {
+    if let Some(hit_record) = hit(world, ray, 0.0, f32::MAX) {
+        let m = 255.0 * 0.5 * (hit_record.normal + Vector3::new(1.0, 1.0, 1.0));
         return color(m.x as i32, m.y as i32, m.z as i32);
     }
-    let unit_direction = r.unit_dir();
+    let unit_direction = ray.unit_dir();
     let a = 0.5 * (unit_direction.y + 1.0);
-    let c = (1.0 - a) * Vector3::new(255.0, 255.0, 255.0) + a * Vector3::new(0.5 * 255.0, 0.7 * 255.0, 255.0);
+    let c = 255.0 * ((1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0));
     return color(c.x as i32, c.y as i32, c.z as i32);
-}
-
-fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> Option<f32> {
-    let oc = ray.origin() - center;
-    let a = ray.dir.magnitude2(); // squared length
-    let half_b = oc.dot(ray.dir);
-    let c = oc.magnitude2() - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-
-    return if discriminant < 0.0 {
-        None
-    } else {
-        Some((-half_b - discriminant.sqrt()) / a)
-    };
 }
 
 // RUST_LOG=info cargo run > image.ppm
@@ -52,6 +39,11 @@ fn main() {
     let image_width = 400;
     // Calculate the image height, and ensure that it's at least 1.
     let image_height = ((image_width as f32 / aspect_ratio) as i32).max(1);
+
+    // World
+    let mut world_objects = Vec::new();
+    world_objects.push(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
+    world_objects.push(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
 
     // Camera
     let focal_length = 1.0;
@@ -80,7 +72,7 @@ fn main() {
             let ray_direction = pixel_center - camera_center;
             let ray = Ray::new(camera_center, ray_direction);
 
-            let color = ray_color(&ray);
+            let color = ray_color(&ray, &world_objects);
             write_color(color);
         }
     }
