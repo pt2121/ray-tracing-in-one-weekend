@@ -20,7 +20,7 @@ fn write_color(color: Vector3<i32>) {
 }
 
 fn ray_color(ray: &Ray, world: &Vec<impl Hittable>) -> Vector3<i32> {
-    if let Some(hit_record) = hit(world, ray, 0.0, f32::MAX) {
+    if let Some(hit_record) = hit(world, ray, 0.0..=f32::MAX) {
         let m = 255.0 * 0.5 * (hit_record.normal + Vector3::new(1.0, 1.0, 1.0));
         return color(m.x as i32, m.y as i32, m.z as i32);
     }

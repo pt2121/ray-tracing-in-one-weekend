@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
@@ -25,11 +26,11 @@ fn is_front_face(ray: &Ray, outward_normal: Vector3<f32>) -> bool {
     return ray.dir.dot(outward_normal) < 0.0;
 }
 
-pub fn hit(objects: &Vec<impl Hittable>, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
-    let mut closest = ray_tmax;
+pub fn hit(objects: &Vec<impl Hittable>, ray: &Ray, ray_t: RangeInclusive<f32>) -> Option<HitRecord> {
+    let mut closest = ray_t.end().clone();
     let mut hit_anything: Option<HitRecord> = None;
     for h in objects.iter() {
-        if let Some(hit) = h.hit(ray, ray_tmin, closest) {
+        if let Some(hit) = h.hit(ray, ray_t.start().clone()..=closest.clone()) {
             closest = hit.t;
             hit_anything = Some(hit);
         }
@@ -38,7 +39,7 @@ pub fn hit(objects: &Vec<impl Hittable>, ray: &Ray, ray_tmin: f32, ray_tmax: f32
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f32>) -> Option<HitRecord> {
         let oc = ray.origin() - self.center.to_vec();
         let a = ray.dir.magnitude2(); // squared length
         let half_b = oc.dot(ray.dir);
@@ -50,9 +51,9 @@ impl Hittable for Sphere {
             let sqrt_of_discriminant = discriminant.sqrt();
             // Find the nearest root that lies in the acceptable range.
             let mut root = (-half_b - sqrt_of_discriminant) / a;
-            if root <= ray_tmin || root >= ray_tmax {
+            if !ray_t.contains(&root) {
                 root = (-half_b + sqrt_of_discriminant) / a;
-                if root <= ray_tmin || root >= ray_tmax {
+                if !ray_t.contains(&root) {
                     return None;
                 }
             }
