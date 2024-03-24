@@ -1,4 +1,4 @@
-use cgmath::{EuclideanSpace, Point3, Vector3};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use log::info;
 use rand::Rng;
 use crate::hittable::Hittable;
@@ -13,10 +13,11 @@ pub struct Camera {
     pixel_delta_v: Vector3<f32>,
     pixel00_loc: Point3<f32>,
     samples_per_pixel: i32,
+    max_depth: i32,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32) -> Self {
+    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32, max_depth: i32) -> Self {
         let image_height = ((image_width as f32 / aspect_ratio) as i32).max(1);
         let focal_length = 1.0;
         let viewport_height = 2.0;
@@ -42,6 +43,7 @@ impl Camera {
             pixel_delta_v,
             pixel00_loc,
             samples_per_pixel,
+            max_depth,
         }
     }
 
@@ -52,12 +54,12 @@ impl Camera {
         for j in 0..self.image_height {
             info!("remaining: {} ", self.image_height - j);
             for i in 0..self.image_width {
-                let mut pixel_color = Vector3::new(0, 0, 0);
+                let mut pixel_color = Vector3::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    pixel_color += ray_color(&r, world_objects);
+                    pixel_color += ray_color(&r, self.max_depth, world_objects);
                 }
-                write_color_with_sample(pixel_color, self.samples_per_pixel);
+                write_color(pixel_color, self.samples_per_pixel);
             }
         }
         info!("Done.")
@@ -80,25 +82,61 @@ impl Camera {
     }
 }
 
-fn ray_color(ray: &Ray, world: &Vec<impl Hittable>) -> Vector3<i32> {
-    if let Some(hit_record) = hit(world, ray, 0.0..=f32::MAX) {
-        let m = 255.0 * 0.5 * (hit_record.normal + Vector3::new(1.0, 1.0, 1.0));
-        return color(m.x as i32, m.y as i32, m.z as i32);
+fn ray_color(ray: &Ray, depth: i32, world: &Vec<impl Hittable>) -> Vector3<f32> {
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if depth <= 0 {
+        return color(0.0, 0.0, 0.0);
+    }
+
+    if let Some(hit_record) = hit(world, ray, 0.001..=f32::MAX) {
+        let direction = random_on_hemisphere(hit_record.normal);
+        let m = ray_color(&Ray::new(hit_record.p, direction), depth - 1, world)
+            .map(|u| {
+                0.5 * u
+            });
+        return color(m.x, m.y, m.z);
     }
     let unit_direction = ray.unit_dir();
     let a = 0.5 * (unit_direction.y + 1.0);
-    let c = 255.0 * ((1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0));
-    return color(c.x as i32, c.y as i32, c.z as i32);
+    let c = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+    return color(c.x, c.y, c.z);
 }
 
-fn color(r: i32, g: i32, b: i32) -> Vector3<i32> {
+fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     return Vector3::new(r, g, b);
 }
 
-fn write_color_with_sample(color: Vector3<i32>, samples_per_pixel: i32) {
-    let c = color.map(|x| { x as f32 / samples_per_pixel as f32 });
+fn write_color(color: Vector3<f32>, samples_per_pixel: i32) {
+    let c = color.map(|x| { x * 256.0 / samples_per_pixel as f32 });
     let r = c.x.clamp(0.000, 255.0);
     let g = c.y.clamp(0.000, 255.0);
     let b = c.z.clamp(0.000, 255.0);
     println!("{} {} {}", r as i32, g as i32, b as i32);
+}
+
+fn random_vec3_range(min: f32, max: f32) -> Vector3<f32> {
+    let mut rng = rand::thread_rng();
+    Vector3::new(rng.gen_range(min..max), rng.gen_range(min..max), rng.gen_range(min..max))
+}
+
+fn random_on_hemisphere(normal: Vector3<f32>) -> Vector3<f32> {
+    let on_unit_sphere = random_unit_vector();
+    if on_unit_sphere.dot(normal) > 0.0 { // In the same hemisphere as the normal
+        on_unit_sphere
+    } else {
+        -on_unit_sphere
+    }
+}
+
+fn random_unit_vector() -> Vector3<f32> {
+    random_in_unit_sphere().normalize()
+}
+
+fn random_in_unit_sphere() -> Vector3<f32> {
+    loop {
+        let p = random_vec3_range(-1.0, 1.0);
+        if p.magnitude2() < 1.0 {
+            return p;
+        }
+    }
 }
