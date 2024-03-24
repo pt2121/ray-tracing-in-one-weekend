@@ -25,6 +25,18 @@ fn is_front_face(ray: &Ray, outward_normal: Vector3<f32>) -> bool {
     return ray.dir.dot(outward_normal) < 0.0;
 }
 
+pub fn hit(objects: Vec<impl Hittable>, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
+    let mut closest = ray_tmax;
+    let mut hit_anything: Option<HitRecord> = None;
+    for h in objects.iter() {
+        if let Some(hit) = h.hit(ray, ray_tmin, closest) {
+            closest = hit.t;
+            hit_anything = Some(hit);
+        }
+    }
+    hit_anything
+}
+
 impl Hittable for Sphere {
     fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
         let oc = ray.origin() - self.center.to_vec();
