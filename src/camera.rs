@@ -1,5 +1,6 @@
-use cgmath::{Point3, Vector3};
+use cgmath::{EuclideanSpace, Point3, Vector3};
 use log::info;
+use rand::Rng;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::sphere::{hit, Sphere};
@@ -11,10 +12,11 @@ pub struct Camera {
     pixel_delta_u: Vector3<f32>,
     pixel_delta_v: Vector3<f32>,
     pixel00_loc: Point3<f32>,
+    samples_per_pixel: i32,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32) -> Self {
+    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32) -> Self {
         let image_height = ((image_width as f32 / aspect_ratio) as i32).max(1);
         let focal_length = 1.0;
         let viewport_height = 2.0;
@@ -39,6 +41,7 @@ impl Camera {
             pixel_delta_u,
             pixel_delta_v,
             pixel00_loc,
+            samples_per_pixel,
         }
     }
 
@@ -49,15 +52,31 @@ impl Camera {
         for j in 0..self.image_height {
             info!("remaining: {} ", self.image_height - j);
             for i in 0..self.image_width {
-                let pixel_center = self.pixel00_loc + (i as f32 * self.pixel_delta_u) + (j as f32 * self.pixel_delta_v);
-                let ray_direction = pixel_center - self.center;
-                let ray = Ray::new(self.center, ray_direction);
-
-                let color = ray_color(&ray, &world_objects);
-                write_color(color);
+                let mut pixel_color = Vector3::new(0, 0, 0);
+                for _ in 0..self.samples_per_pixel {
+                    let r = self.get_ray(i, j);
+                    pixel_color += ray_color(&r, world_objects);
+                }
+                write_color_with_sample(pixel_color, self.samples_per_pixel);
             }
         }
         info!("Done.")
+    }
+
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let pixel_center = self.pixel00_loc + (i as f32 * self.pixel_delta_u) + (j as f32 * self.pixel_delta_v);
+        let pixel_sample = pixel_center.to_vec() + self.pixel_sample_square();
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - ray_origin.to_vec();
+        return Ray::new(ray_origin, ray_direction);
+    }
+
+    fn pixel_sample_square(&self) -> Vector3<f32> {
+        let mut rng = rand::thread_rng();
+        let px = -0.5 + rng.gen_range(0.0..1.0);
+        let py = -0.5 + rng.gen_range(0.0..1.0);
+        return (px * self.pixel_delta_u) + (py * self.pixel_delta_v);
     }
 }
 
@@ -76,6 +95,10 @@ fn color(r: i32, g: i32, b: i32) -> Vector3<i32> {
     return Vector3::new(r, g, b);
 }
 
-fn write_color(color: Vector3<i32>) {
-    println!("{} {} {}", color.x, color.y, color.z);
+fn write_color_with_sample(color: Vector3<i32>, samples_per_pixel: i32) {
+    let c = color.map(|x| { x as f32 / samples_per_pixel as f32 });
+    let r = c.x.clamp(0.000, 255.0);
+    let g = c.y.clamp(0.000, 255.0);
+    let b = c.z.clamp(0.000, 255.0);
+    println!("{} {} {}", r as i32, g as i32, b as i32);
 }
