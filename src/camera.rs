@@ -1,9 +1,10 @@
-use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
+use std::ops::Mul;
+use cgmath::{ElementWise, EuclideanSpace, Point3, Vector3};
 use log::info;
 use rand::Rng;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
-use crate::sphere::{hit, Sphere};
+use crate::sphere::hit;
 
 pub struct Camera {
     image_width: i32,
@@ -47,14 +48,14 @@ impl Camera {
         }
     }
 
-    pub fn render(&self, world_objects: &Vec<Sphere>) {
+    pub fn render(&self, world_objects: &Vec<Box<dyn Hittable>>) {
         // Render
         println!("P3\n{} {}\n255\n", self.image_width, self.image_height);
 
         for j in 0..self.image_height {
             info!("remaining: {} ", self.image_height - j);
             for i in 0..self.image_width {
-                let mut pixel_color = Vector3::new(0.0, 0.0, 0.0);
+                let mut pixel_color = color(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
                     pixel_color += ray_color(&r, self.max_depth, world_objects);
@@ -82,27 +83,27 @@ impl Camera {
     }
 }
 
-fn ray_color(ray: &Ray, depth: i32, world: &Vec<impl Hittable>) -> Vector3<f32> {
+fn ray_color(ray: &Ray, depth: i32, world: &Vec<Box<dyn Hittable>>) -> Vector3<f32> {
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if depth <= 0 {
         return color(0.0, 0.0, 0.0);
     }
 
     if let Some(hit_record) = hit(world, ray, 0.001..=f32::MAX) {
-        let direction = hit_record.normal + random_unit_vector();
-        let m = ray_color(&Ray::new(hit_record.p, direction), depth - 1, world)
-            .map(|u| {
-                0.5 * u
-            });
-        return color(m.x, m.y, m.z);
+        return if let Some((scattered, attenuation)) = hit_record.material.scatter(ray, &hit_record) {
+            attenuation.mul_element_wise(ray_color(&scattered, depth - 1, world))
+        } else {
+            color(0.0, 0.0, 0.0)
+        };
     }
+
     let unit_direction = ray.unit_dir();
     let a = 0.5 * (unit_direction.y + 1.0);
-    let c = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+    let c = (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
     return color(c.x, c.y, c.z);
 }
 
-fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
+pub fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     return Vector3::new(r, g, b);
 }
 
@@ -118,31 +119,4 @@ fn write_color(color: Vector3<f32>, samples_per_pixel: i32) {
     let g = c.y.clamp(0.000, 255.0);
     let b = c.z.clamp(0.000, 255.0);
     println!("{} {} {}", r as i32, g as i32, b as i32);
-}
-
-fn random_vec3_range(min: f32, max: f32) -> Vector3<f32> {
-    let mut rng = rand::thread_rng();
-    Vector3::new(rng.gen_range(min..max), rng.gen_range(min..max), rng.gen_range(min..max))
-}
-
-fn random_on_hemisphere(normal: Vector3<f32>) -> Vector3<f32> {
-    let on_unit_sphere = random_unit_vector();
-    if on_unit_sphere.dot(normal) > 0.0 { // In the same hemisphere as the normal
-        on_unit_sphere
-    } else {
-        -on_unit_sphere
-    }
-}
-
-fn random_unit_vector() -> Vector3<f32> {
-    random_in_unit_sphere().normalize()
-}
-
-fn random_in_unit_sphere() -> Vector3<f32> {
-    loop {
-        let p = random_vec3_range(-1.0, 1.0);
-        if p.magnitude2() < 1.0 {
-            return p;
-        }
-    }
 }

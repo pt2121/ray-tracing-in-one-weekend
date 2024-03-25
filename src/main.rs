@@ -1,21 +1,31 @@
+use cgmath::Point3;
+
+use crate::camera::{Camera, color};
+use crate::hittable::Hittable;
+use crate::material::{Lambertian, Metal};
+use crate::sphere::Sphere;
+
 mod ray;
 mod hittable;
 mod hit_record;
 mod sphere;
 mod camera;
-
-use cgmath::Point3;
-use crate::camera::Camera;
-use crate::sphere::Sphere;
+mod material;
 
 // RUST_LOG=info cargo run > image.ppm
 fn main() {
     env_logger::init();
 
-    // World
-    let mut world_objects = Vec::new();
-    world_objects.push(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
-    world_objects.push(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
+    let material_ground = Lambertian::new(color(0.8, 0.8, 0.0));
+    let material_center = Lambertian::new(color(0.7, 0.3, 0.3));
+    let material_left = Metal::new(color(0.8, 0.8, 0.8));
+    let material_right = Metal::new(color(0.8, 0.6, 0.2));
+    let world_objects: Vec<Box<dyn Hittable>> = vec![
+        Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground)),
+        Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material_center)),
+        Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, material_left)),
+        Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, material_right)),
+    ];
 
     // Camera
     let camera = Camera::new(16.0 / 9.0, 400, 10, 50);
