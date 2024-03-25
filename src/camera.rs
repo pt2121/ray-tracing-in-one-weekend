@@ -89,7 +89,7 @@ fn ray_color(ray: &Ray, depth: i32, world: &Vec<impl Hittable>) -> Vector3<f32> 
     }
 
     if let Some(hit_record) = hit(world, ray, 0.001..=f32::MAX) {
-        let direction = random_on_hemisphere(hit_record.normal);
+        let direction = hit_record.normal + random_unit_vector();
         let m = ray_color(&Ray::new(hit_record.p, direction), depth - 1, world)
             .map(|u| {
                 0.5 * u
