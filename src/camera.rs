@@ -106,8 +106,14 @@ fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     return Vector3::new(r, g, b);
 }
 
+fn linear_to_gamma(linear_component: f32) -> f32 {
+    linear_component.sqrt()
+}
+
 fn write_color(color: Vector3<f32>, samples_per_pixel: i32) {
-    let c = color.map(|x| { x * 256.0 / samples_per_pixel as f32 });
+    let c = color.map(|x| {
+        linear_to_gamma(x / samples_per_pixel as f32) * 256.0
+    });
     let r = c.x.clamp(0.000, 255.0);
     let g = c.y.clamp(0.000, 255.0);
     let b = c.z.clamp(0.000, 255.0);
