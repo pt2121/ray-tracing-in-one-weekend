@@ -1,5 +1,6 @@
 use cgmath::{InnerSpace, Vector3};
 use rand::Rng;
+use crate::camera::color;
 use crate::hit_record::HitRecord;
 use crate::ray::Ray;
 
@@ -81,4 +82,37 @@ impl Material for Metal {
 
 fn reflect(v: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
     v - 2.0 * v.dot(n) * n
+}
+
+pub struct Dielectric {
+    index_of_refraction: f32,
+}
+
+impl Dielectric {
+    pub fn new(index_of_refraction: f32) -> Self {
+        Dielectric { index_of_refraction }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Vector3<f32>)> {
+        let refraction_ratio = if hit_record.front_face {
+            1.0 / self.index_of_refraction
+        } else {
+            self.index_of_refraction
+        };
+        let unit_direction = ray.unit_dir();
+        let refracted = refract(unit_direction, hit_record.normal, refraction_ratio);
+
+        let scattered = Ray::new(hit_record.p, refracted);
+        let attenuation = color(1.0, 1.0, 1.0);
+        return Some((scattered, attenuation));
+    }
+}
+
+fn refract(uv: Vector3<f32>, n: Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
+    let cos_theta = (-uv).dot(n).min(1.0);
+    let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    let r_out_parallel = -(1.0 - r_out_perp.magnitude2()).abs().sqrt() * n;
+    return r_out_perp + r_out_parallel;
 }

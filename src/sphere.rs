@@ -62,18 +62,20 @@ impl<M: Material> Hittable for Sphere<M> {
                 }
             }
 
-            let point3 = ray.at(root);
-            let outward_normal = (point3 - self.center) / self.radius;
-            let normal = if is_front_face(ray, outward_normal) {
+            let p = ray.at(root);
+            let outward_normal = (p - self.center) / self.radius;
+            let front_face = is_front_face(ray, outward_normal);
+            let normal = if front_face {
                 outward_normal
             } else {
                 -outward_normal
             };
             Some(HitRecord {
                 t: root,
-                p: point3,
+                p,
                 normal,
                 material: &self.material,
+                front_face,
             })
         };
     }

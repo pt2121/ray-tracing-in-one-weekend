@@ -2,7 +2,7 @@ use cgmath::Point3;
 
 use crate::camera::{Camera, color};
 use crate::hittable::Hittable;
-use crate::material::{Lambertian, Metal};
+use crate::material::{Dielectric, Lambertian, Metal};
 use crate::sphere::Sphere;
 
 mod ray;
@@ -17,8 +17,8 @@ fn main() {
     env_logger::init();
 
     let material_ground = Lambertian::new(color(0.8, 0.8, 0.0));
-    let material_center = Lambertian::new(color(0.7, 0.3, 0.3));
-    let material_left = Metal::new(color(0.8, 0.8, 0.8), 0.3);
+    let material_center = Dielectric::new(1.5);
+    let material_left = Dielectric::new(1.5);
     let material_right = Metal::new(color(0.8, 0.6, 0.2), 1.0);
     let world_objects: Vec<Box<dyn Hittable>> = vec![
         Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground)),

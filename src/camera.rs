@@ -112,10 +112,8 @@ fn linear_to_gamma(linear_component: f32) -> f32 {
 
 fn write_color(color: Vector3<f32>, samples_per_pixel: i32) {
     let c = color.map(|x| {
-        linear_to_gamma(x / samples_per_pixel as f32) * 256.0
+        (linear_to_gamma(x / samples_per_pixel as f32)
+            .clamp(0.0, 0.999) * 256.0) as i32
     });
-    let r = c.x.clamp(0.000, 255.0);
-    let g = c.y.clamp(0.000, 255.0);
-    let b = c.z.clamp(0.000, 255.0);
-    println!("{} {} {}", r as i32, g as i32, b as i32);
+    println!("{} {} {}", c.x, c.y, c.z);
 }
