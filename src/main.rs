@@ -1,10 +1,10 @@
 use std::f32::consts::PI;
 
-use cgmath::Point3;
+use cgmath::{Point3, Vector3};
 
 use crate::camera::{Camera, color};
 use crate::hittable::Hittable;
-use crate::material::Lambertian;
+use crate::material::{Dielectric, Lambertian, Metal};
 use crate::sphere::Sphere;
 
 mod ray;
@@ -18,12 +18,15 @@ mod material;
 fn main() {
     env_logger::init();
 
-    let r = (PI / 4.0).cos();
-    let material_left = Lambertian::new(color(0.0, 0.0, 1.0));
-    let material_right = Lambertian::new(color(1.0, 0.0, 0.0));
+    let material_ground = Lambertian::new(color(0.8, 0.8, 0.0));
+    let material_center = Lambertian::new(color(0.1, 0.2, 0.5));
+    let material_right = Metal::new(color(0.8, 0.6, 0.2), 0.0);
     let world_objects: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(Point3::new(-r, 0.0, -1.0), r, material_left)),
-        Box::new(Sphere::new(Point3::new(r, 0.0, -1.0), r, material_right)),
+        Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground)),
+        Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material_center)),
+        Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, Dielectric::new(1.5))),
+        Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), -0.4, Dielectric::new(1.5))),
+        Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, material_right)),
     ];
 
     // Camera
@@ -32,7 +35,10 @@ fn main() {
         400,
         10,
         50,
-        90.0,
+        20.0,
+        Point3::new(-2.0, 2.0, 1.0),
+        Point3::new(0.0, 0.0, -1.0),
+        Vector3::new(0.0, 1.0, 0.0),
     );
     camera.render(&world_objects)
 }

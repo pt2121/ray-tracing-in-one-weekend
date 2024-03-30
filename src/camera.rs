@@ -1,4 +1,4 @@
-use cgmath::{ElementWise, EuclideanSpace, Point3, Vector3};
+use cgmath::{ElementWise, EuclideanSpace, InnerSpace, Point3, Vector3};
 use log::info;
 use rand::Rng;
 use crate::hittable::Hittable;
@@ -23,23 +23,32 @@ impl Camera {
         samples_per_pixel: i32,
         max_depth: i32,
         vfov: f32, // Vertical view angle (field of view)
+        look_from: Point3<f32>, // Point camera is looking from
+        look_at: Point3<f32>, // Point camera is looking at
+        vup: Vector3<f32>, // Camera-relative "up" direction
     ) -> Self {
         let image_height = ((image_width as f32 / aspect_ratio) as i32).max(1);
-        let focal_length = 1.0;
+        let center = look_from;
+        // Determine viewport dimensions.
+        let focal_length = (look_from - look_at).magnitude();
         let theta = vfov.to_radians();
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (image_width as f32 / image_height as f32);
-        let center = Point3::new(0.0f32, 0.0, 0.0);
+
+        // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+        let w = (look_from - look_at).normalize();
+        let u = vup.cross(w).normalize();
+        let v = w.cross(u);
 
         // create the vectors representing the viewport edges.
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        let viewport_u = viewport_width * u;
+        let viewport_v = viewport_height * -v;
         // create delta vectors (pixel vectors)
         let pixel_delta_u = viewport_u / image_width as f32;
         let pixel_delta_v = viewport_v / image_height as f32;
         // Calculate the location of the upper left pixel.
-        let viewport_upper_left = center - Vector3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+        let viewport_upper_left = center - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
         // Find the center of the first pixel
         let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
