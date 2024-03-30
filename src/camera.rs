@@ -17,10 +17,18 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32, max_depth: i32) -> Self {
+    pub fn new(
+        aspect_ratio: f32,
+        image_width: i32,
+        samples_per_pixel: i32,
+        max_depth: i32,
+        vfov: f32, // Vertical view angle (field of view)
+    ) -> Self {
         let image_height = ((image_width as f32 / aspect_ratio) as i32).max(1);
         let focal_length = 1.0;
-        let viewport_height = 2.0;
+        let theta = vfov.to_radians();
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (image_width as f32 / image_height as f32);
         let center = Point3::new(0.0f32, 0.0, 0.0);
 
