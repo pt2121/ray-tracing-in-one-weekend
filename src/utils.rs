@@ -23,3 +23,13 @@ fn random_in_unit_sphere() -> Vector3<f32> {
         }
     }
 }
+
+pub fn random_in_unit_disk() -> Vector3<f32> {
+    let mut rng = rand::thread_rng();
+    loop {
+        let p = Vector3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+        if p.magnitude2() < 1.0 {
+            return p;
+        }
+    }
+}
