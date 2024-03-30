@@ -102,9 +102,18 @@ impl Material for Dielectric {
             self.index_of_refraction
         };
         let unit_direction = ray.unit_dir();
-        let refracted = refract(unit_direction, hit_record.normal, refraction_ratio);
+        let cos_theta = -unit_direction.dot(hit_record.normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let direction = if cannot_refract {
+            // Must Reflect
+            reflect(unit_direction, hit_record.normal)
+        } else {
+            // Can Refract
+            refract(unit_direction, hit_record.normal, refraction_ratio)
+        };
 
-        let scattered = Ray::new(hit_record.p, refracted);
+        let scattered = Ray::new(hit_record.p, direction);
         let attenuation = color(1.0, 1.0, 1.0);
         return Some((scattered, attenuation));
     }
