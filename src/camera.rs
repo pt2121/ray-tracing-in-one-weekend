@@ -1,4 +1,3 @@
-use std::ops::Mul;
 use cgmath::{ElementWise, EuclideanSpace, Point3, Vector3};
 use log::info;
 use rand::Rng;
