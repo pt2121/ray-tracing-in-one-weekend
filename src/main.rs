@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use cgmath::{Point3, Vector3};
 
 use crate::camera::{Camera, color};
@@ -13,6 +11,7 @@ mod hit_record;
 mod sphere;
 mod camera;
 mod material;
+mod utils;
 
 // RUST_LOG=info cargo run > image.ppm
 fn main() {
