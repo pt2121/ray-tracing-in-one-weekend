@@ -1,5 +1,7 @@
 use std::ops::RangeInclusive;
+
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
+
 use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
 use crate::material::Material;

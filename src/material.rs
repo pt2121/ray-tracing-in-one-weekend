@@ -1,5 +1,6 @@
 use cgmath::{InnerSpace, Vector3};
 use rand::random;
+
 use crate::camera::color;
 use crate::hit_record::HitRecord;
 use crate::ray::Ray;

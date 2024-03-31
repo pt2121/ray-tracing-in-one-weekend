@@ -1,4 +1,5 @@
 use cgmath::{Point3, Vector3};
+
 use crate::material::Material;
 
 pub struct HitRecord<'a> {

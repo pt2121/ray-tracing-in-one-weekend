@@ -1,6 +1,7 @@
 use cgmath::{ElementWise, EuclideanSpace, InnerSpace, Point3, Vector3};
 use log::info;
 use rand::Rng;
+
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::sphere::hit;

@@ -1,4 +1,5 @@
 use std::ops::RangeInclusive;
+
 use crate::hit_record::HitRecord;
 use crate::ray::Ray;
 
